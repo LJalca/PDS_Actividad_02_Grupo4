@@ -1,0 +1,920 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Composite — Presupuesto institucional</title>
+  <style>
+    :root {
+      --papel: #faefd3;
+      --hoja: #ffffff;
+      --tinta: #102858;
+      --suave: #1a405c;
+      --linea: #e4d3b4;
+      --cobre: #fbc011;
+      --verde: #2f5496;
+      --verde-suave: #e7eef6;
+      --marca: #fbc011;
+      --margen: #1d3a6f;
+      --sombra: 0 18px 40px rgba(16, 40, 88, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--tinta);
+      background:
+        repeating-linear-gradient(90deg, transparent, transparent 31px, rgba(29, 58, 111, 0.06) 32px),
+        #faefd3;
+      font-family: Cambria, "Palatino Linotype", Palatino, Georgia, serif;
+      line-height: 1.45;
+    }
+
+    .hoja {
+      width: 100%;
+      max-width: none;
+      min-height: 100vh;
+      margin: 0;
+      padding: 28px 40px 48px;
+      background: transparent;
+      border-left: 16px solid var(--margen);
+      box-shadow: inset 5px 0 0 var(--cobre);
+    }
+
+    .kicker {
+      margin: 0 0 8px;
+      color: var(--margen);
+      font-family: "Segoe UI", sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      display: inline-block;
+      margin: 0;
+      padding-bottom: 8px;
+      border-bottom: 3px solid var(--cobre);
+      color: var(--margen);
+      font-family: "Palatino Linotype", Palatino, Georgia, serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+    }
+
+    .lede {
+      max-width: 68ch;
+      margin: 12px 0 0;
+      color: var(--suave);
+      font-size: 1.12rem;
+    }
+
+    .pasos-lectura {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 26px 0 8px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .pasos-lectura li {
+      padding: 12px 14px;
+      background: var(--hoja);
+      border-top: 3px solid var(--cobre);
+    }
+
+    .pasos-lectura strong {
+      display: block;
+      margin-bottom: 4px;
+      font-family: "Segoe UI", sans-serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .pestanas {
+      display: flex;
+      gap: 6px;
+      margin: 28px 0 0;
+      border-bottom: 2px solid var(--tinta);
+    }
+
+    .pestana {
+      margin: 0;
+      padding: 12px 22px;
+      border: 1px solid var(--linea);
+      border-bottom: none;
+      background: transparent;
+      color: var(--suave);
+      font-family: "Segoe UI", sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .pestana.activa {
+      background: var(--hoja);
+      color: var(--tinta);
+      border-color: var(--tinta);
+      box-shadow: inset 0 3px 0 var(--cobre);
+    }
+
+    .panel-tab { display: none; padding-top: 18px; }
+    .panel-tab.activa { display: block; }
+
+    figure {
+      margin: 0;
+      padding: 16px;
+      background: white;
+      border: 1px solid var(--linea);
+      overflow-x: auto;
+    }
+
+    figure img {
+      display: block;
+      width: auto;
+      max-width: 100%;
+      height: auto;
+      margin: 0 auto;
+    }
+
+    figcaption {
+      margin-top: 10px;
+      color: var(--suave);
+      font-size: 0.95rem;
+    }
+
+    .laboratorio {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      padding: 16px;
+      background: var(--hoja);
+      border: 1px solid var(--linea);
+    }
+
+    .panel h3 {
+      margin: 0 0 12px;
+      font-size: 1.05rem;
+    }
+
+    .arbol { display: flex; flex-direction: column; gap: 6px; }
+
+    .hijos {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 6px 0 0 16px;
+      padding-left: 12px;
+      border-left: 1px solid var(--linea);
+    }
+
+    .nodo {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .nodo:hover { background: rgba(255, 255, 255, 0.7); }
+
+    .nodo.activo {
+      background: #fff6d0;
+      border-color: var(--cobre);
+      box-shadow: inset 3px 0 var(--margen);
+    }
+
+    .nodo.visita {
+      background: var(--verde-suave);
+      border-color: #8aa4c8;
+    }
+
+    .rol {
+      flex: 0 0 auto;
+      font-family: "Segoe UI", sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .nodo.grupo .rol { color: var(--margen); }
+    .nodo.partida .rol { color: var(--verde); }
+
+    .codigo {
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-weight: 700;
+    }
+
+    .nombre { flex: 1; min-width: 0; }
+
+    .monto {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .cliente-tipo {
+      margin: 0 0 10px;
+      padding: 10px 12px;
+      background: #102858;
+      color: #faefd3;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 0.86rem;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .cliente-tipo em { color: #fbc011; font-style: normal; }
+
+    .resultado {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+
+    .dato {
+      padding: 8px 10px;
+      background: white;
+      border: 1px solid var(--linea);
+    }
+
+    .dato span {
+      display: block;
+      color: var(--suave);
+      font-family: "Segoe UI", sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .dato.ancho { grid-column: 1 / -1; }
+
+    .dato strong { font-size: 1.05rem; }
+
+    pre.estructura {
+      margin: 6px 0 0;
+      white-space: pre-wrap;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 0.82rem;
+    }
+
+    .recorrido {
+      max-height: 420px;
+      margin: 0;
+      padding: 0;
+      overflow: auto;
+      list-style: none;
+    }
+
+    .paso {
+      margin: 0 0 6px;
+      padding: 7px 8px;
+      background: white;
+      border-left: 3px solid var(--linea);
+      font-size: 0.92rem;
+    }
+
+    .paso.actual {
+      background: var(--marca);
+      border-left-color: var(--cobre);
+    }
+
+    .acciones {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    button.accion, button.enviar {
+      border: 1px solid var(--tinta);
+      background: var(--tinta);
+      color: var(--papel);
+      font-family: "Segoe UI", sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    button.secundario { background: transparent; color: var(--tinta); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    form .enviar { grid-column: 1 / -1; justify-self: start; }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      color: var(--suave);
+      font-family: "Segoe UI", sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    input, select {
+      border: none;
+      border-bottom: 1px solid var(--tinta);
+      background: transparent;
+      color: var(--tinta);
+      font: 1rem Cambria, Georgia, serif;
+      padding: 6px 2px;
+    }
+
+    .aviso {
+      grid-column: 1 / -1;
+      min-height: 1.2em;
+      color: var(--margen);
+      font-size: 0.92rem;
+      text-transform: none;
+      letter-spacing: 0;
+      font-family: Cambria, Georgia, serif;
+    }
+
+    .codigo-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .bloque {
+      margin: 0;
+      padding: 12px;
+      background: #102858;
+      color: #faefd3;
+      overflow: auto;
+    }
+
+    .bloque.activa { outline: 3px solid var(--marca); }
+
+    .bloque header {
+      margin-bottom: 8px;
+      color: #fbc011;
+      font-family: "Segoe UI", sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .bloque pre {
+      margin: 0;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+
+    .marca {
+      background: #fbc011;
+      color: #102858;
+    }
+
+    .nota {
+      margin: 8px 0 0;
+      color: var(--suave);
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 1100px) {
+      .codigo-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 860px) {
+      .hoja { padding: 22px 16px 32px; }
+      h1 { font-size: 2rem; }
+      .pasos-lectura, .laboratorio, .codigo-grid, .resultado, form { grid-template-columns: 1fr; }
+      .pestanas { flex-wrap: wrap; }
+      .pestana { flex: 1 1 auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="hoja">
+    <p class="kicker">Actividad 02 · Escenario 1 · Grupo 4</p>
+    <h1>La misma pregunta, dos respuestas</h1>
+    <p class="lede">Una partida responde con su valor asignado. Un grupo hace la misma pregunta a sus hijos y suma lo que le devuelven. El cliente no pregunta si el elemento es partida o grupo.</p>
+    <ol class="pasos-lectura">
+      <li><strong>1. Elija un nodo</strong>El presupuesto ya tiene el grupo Tecnologías de la Información, con partidas y con el grupo Infraestructura.</li>
+      <li><strong>2. Mire al cliente</strong>Siempre llama obtenerCodigo, obtenerDescripcion, calcularValorTotal y mostrarEstructura.</li>
+      <li><strong>3. Compare</strong>En una partida el valor sale directo. En un grupo la suma sube desde los hijos, incluso si un hijo es otro grupo.</li>
+    </ol>
+
+    <div class="pestanas" role="tablist" aria-label="Contenido del escenario">
+      <button type="button" class="pestana" role="tab" id="tab-diagrama" aria-selected="false" aria-controls="panel-diagrama" data-panel="panel-diagrama">Diagrama</button>
+      <button type="button" class="pestana activa" role="tab" id="tab-presupuesto" aria-selected="true" aria-controls="panel-presupuesto" data-panel="panel-presupuesto">Presupuesto</button>
+      <button type="button" class="pestana" role="tab" id="tab-codigo" aria-selected="false" aria-controls="panel-codigo" data-panel="panel-codigo">Código</button>
+    </div>
+
+    <section id="panel-diagrama" class="panel-tab" role="tabpanel" aria-labelledby="tab-diagrama">
+      <figure>
+        <img src="diagrama-composite.png" alt="Diagrama UML del patrón Composite aplicado al presupuesto: ElementoPresupuestario, Partida, GrupoPresupuestario y Cliente">
+        <figcaption>Component es la interfaz. Partida es la hoja. GrupoPresupuestario es el compuesto: guarda de 0 a muchos elementos y un elemento puede ser otro grupo. agregar y quitar viven solo en el grupo.</figcaption>
+      </figure>
+    </section>
+
+    <section id="panel-presupuesto" class="panel-tab activa" role="tabpanel" aria-labelledby="tab-presupuesto">
+    <div class="laboratorio">
+      <section class="panel">
+        <h3>Árbol</h3>
+        <div id="arbol" class="arbol"></div>
+        <div class="acciones">
+          <button type="button" class="accion secundario" id="restaurar">Restaurar ejemplo</button>
+        </div>
+        <p class="nota">El monto de cada grupo es calcularValorTotal(). Cambia solo si cambian sus hijos.</p>
+      </section>
+
+      <section class="panel">
+        <h3>Cliente</h3>
+        <div id="firma" class="cliente-tipo"></div>
+        <div id="resultado" class="resultado"></div>
+        <div class="acciones">
+          <button type="button" class="accion" id="recorrer">Ver cómo sube la suma</button>
+          <button type="button" class="accion secundario" id="quitar">Quitar del grupo</button>
+        </div>
+        <ol id="recorrido" class="recorrido"></ol>
+        <form id="alta">
+          <label>Qué agregar
+            <select id="tipo">
+              <option value="partida">Partida</option>
+              <option value="grupo">Grupo</option>
+            </select>
+          </label>
+          <label>Código
+            <input id="codigo" maxlength="12" placeholder="RED">
+          </label>
+          <label>Descripción
+            <input id="descripcion" maxlength="48" placeholder="Red de datos">
+          </label>
+          <label id="etiqueta-valor">Valor asignado
+            <input id="valor" type="number" min="0" step="0.01" placeholder="1500">
+          </label>
+          <p class="aviso" id="aviso"></p>
+          <button type="submit" class="enviar" id="agregar">Agregar al grupo seleccionado</button>
+        </form>
+      </section>
+    </div>
+    </section>
+
+    <section id="panel-codigo" class="panel-tab" role="tabpanel" aria-labelledby="tab-codigo">
+      <p class="nota">consultar() no distingue el tipo. El recorrido del presupuesto solo explica la suma; no es el cliente.</p>
+      <div id="fuentes" class="codigo-grid"></div>
+    </section>
+  </main>
+
+  <script>
+    function dinero(valor) {
+      return new Intl.NumberFormat("es-EC", { style: "currency", currency: "USD" }).format(valor);
+    }
+
+    class ElementoPresupuestario {
+      obtenerCodigo() {
+        throw new Error("Contrato: obtenerCodigo");
+      }
+
+      obtenerDescripcion() {
+        throw new Error("Contrato: obtenerDescripcion");
+      }
+
+      calcularValorTotal() {
+        throw new Error("Contrato: calcularValorTotal");
+      }
+
+      mostrarEstructura() {
+        throw new Error("Contrato: mostrarEstructura");
+      }
+    }
+
+    class Partida extends ElementoPresupuestario {
+      constructor(codigo, descripcion, valorAsignado) {
+        super();
+        this.codigo = codigo;
+        this.descripcion = descripcion;
+        this.valorAsignado = valorAsignado;
+      }
+
+      obtenerCodigo() {
+        return this.codigo;
+      }
+
+      obtenerDescripcion() {
+        return this.descripcion;
+      }
+
+      calcularValorTotal() {
+        return this.valorAsignado;
+      }
+
+      mostrarEstructura() {
+        return this.escribir(0);
+      }
+
+      escribir(nivel) {
+        const sangria = "  ".repeat(nivel);
+        return sangria + this.codigo + "  " + this.descripcion + "  " + dinero(this.calcularValorTotal());
+      }
+    }
+
+    class GrupoPresupuestario extends ElementoPresupuestario {
+      constructor(codigo, descripcion) {
+        super();
+        this.codigo = codigo;
+        this.descripcion = descripcion;
+        this.elementos = [];
+      }
+
+      agregar(elemento) {
+        if (elemento === this) {
+          throw new Error("Un grupo no puede contenerse a sí mismo");
+        }
+        this.elementos.push(elemento);
+      }
+
+      quitar(elemento) {
+        const indice = this.elementos.indexOf(elemento);
+        if (indice >= 0) {
+          this.elementos.splice(indice, 1);
+        }
+      }
+
+      obtenerCodigo() {
+        return this.codigo;
+      }
+
+      obtenerDescripcion() {
+        return this.descripcion;
+      }
+
+      calcularValorTotal() {
+        let total = 0;
+        for (const elemento of this.elementos) {
+          total += elemento.calcularValorTotal();
+        }
+        return total;
+      }
+
+      mostrarEstructura() {
+        return this.escribir(0);
+      }
+
+      escribir(nivel) {
+        const sangria = "  ".repeat(nivel);
+        const lineas = [sangria + this.codigo + "  " + this.descripcion + "  " + dinero(this.calcularValorTotal())];
+        for (const elemento of this.elementos) {
+          lineas.push(elemento.escribir(nivel + 1));
+        }
+        return lineas.join("\n");
+      }
+    }
+
+    function consultar(elemento) {
+      return {
+        codigo: elemento.obtenerCodigo(),
+        descripcion: elemento.obtenerDescripcion(),
+        total: elemento.calcularValorTotal(),
+        estructura: elemento.mostrarEstructura()
+      };
+    }
+
+    const padres = new Map();
+    const ids = new WeakMap();
+    let siguienteId = 1;
+    let raiz = null;
+    let seleccionado = null;
+    let pasos = [];
+    let timer = null;
+
+    function idDe(elemento) {
+      if (!ids.has(elemento)) {
+        ids.set(elemento, "n" + siguienteId);
+        siguienteId += 1;
+      }
+      return ids.get(elemento);
+    }
+
+    function vincular(padre, hijo) {
+      padre.agregar(hijo);
+      padres.set(hijo, padre);
+    }
+
+    function crearEjemplo() {
+      padres.clear();
+      const ti = new GrupoPresupuestario("TI", "Tecnologías de la Información");
+      const infraestructura = new GrupoPresupuestario("INF", "Infraestructura");
+      vincular(infraestructura, new Partida("SRV", "Servidores", 8000));
+      vincular(infraestructura, new Partida("ALM", "Almacenamiento", 4500));
+      vincular(infraestructura, new Partida("COM", "Comunicaciones", 3200));
+      vincular(ti, new Partida("LIC", "Licenciamiento", 12000));
+      vincular(ti, infraestructura);
+      vincular(ti, new Partida("SERV", "Servicios", 6000));
+      raiz = ti;
+      seleccionado = ti;
+    }
+
+    function explicarValor(elemento, profundidad, lista) {
+      if (elemento instanceof Partida) {
+        const valor = elemento.calcularValorTotal();
+        lista.push({
+          profundidad: profundidad,
+          nodo: elemento,
+          clase: "Partida",
+          metodo: "calcularValorTotal",
+          texto: elemento.obtenerCodigo() + " es partida. Devuelve el valor asignado: " + dinero(valor) + "."
+        });
+        return valor;
+      }
+
+      lista.push({
+        profundidad: profundidad,
+        nodo: elemento,
+        clase: "GrupoPresupuestario",
+        metodo: "calcularValorTotal",
+        texto: elemento.obtenerCodigo() + " es grupo. Pregunta calcularValorTotal() a cada hijo."
+      });
+
+      const partes = [];
+      for (const hijo of elemento.elementos) {
+        partes.push(explicarValor(hijo, profundidad + 1, lista));
+      }
+      const total = partes.reduce(function (acumulado, valor) { return acumulado + valor; }, 0);
+      const formula = partes.length ? partes.map(dinero).join(" + ") : "sin hijos";
+      lista.push({
+        profundidad: profundidad,
+        nodo: elemento,
+        clase: "GrupoPresupuestario",
+        metodo: "calcularValorTotal",
+        texto: elemento.obtenerCodigo() + " suma " + formula + " = " + dinero(total) + "."
+      });
+      return total;
+    }
+
+    function detenerRecorrido() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    }
+
+    function escapar(texto) {
+      return texto
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function pintarFuente(nombre, titulo, fuente, claseActiva, metodo) {
+      const activa = nombre === claseActiva;
+      const lineas = fuente.split("\n").map(function (linea) {
+        const marca = activa && metodo && linea.indexOf(metodo + "(") !== -1;
+        return '<span class="' + (marca ? "marca" : "") + '">' + escapar(linea) + "</span>";
+      }).join("\n");
+      return '<article class="bloque' + (activa ? " activa" : "") + '"><header>' + titulo + '</header><pre>' + lineas + "</pre></article>";
+    }
+
+    function renderCodigo(claseActiva, metodo) {
+      const fuentes = document.getElementById("fuentes");
+      fuentes.innerHTML =
+        pintarFuente("ElementoPresupuestario", "Component · contrato", ElementoPresupuestario.toString(), claseActiva, metodo) +
+        pintarFuente("Partida", "Leaf · partida", Partida.toString(), claseActiva, metodo) +
+        pintarFuente("GrupoPresupuestario", "Composite · grupo", GrupoPresupuestario.toString(), claseActiva, metodo) +
+        pintarFuente("consultar", "Client · consultar", consultar.toString(), claseActiva, metodo);
+    }
+
+    function crearNodo(elemento) {
+      const esGrupo = elemento instanceof GrupoPresupuestario;
+      const envoltorio = document.createElement("div");
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = "nodo " + (esGrupo ? "grupo" : "partida");
+      boton.dataset.id = idDe(elemento);
+      if (elemento === seleccionado) boton.classList.add("activo");
+
+      const rol = document.createElement("span");
+      rol.className = "rol";
+      rol.textContent = esGrupo ? "Grupo" : "Partida";
+
+      const codigo = document.createElement("span");
+      codigo.className = "codigo";
+      codigo.textContent = elemento.obtenerCodigo();
+
+      const nombre = document.createElement("span");
+      nombre.className = "nombre";
+      nombre.textContent = elemento.obtenerDescripcion();
+
+      const monto = document.createElement("span");
+      monto.className = "monto";
+      monto.textContent = dinero(elemento.calcularValorTotal());
+
+      boton.append(rol, codigo, nombre, monto);
+      boton.addEventListener("click", function () {
+        seleccionar(elemento);
+      });
+      envoltorio.appendChild(boton);
+
+      if (esGrupo) {
+        const hijos = document.createElement("div");
+        hijos.className = "hijos";
+        elemento.elementos.forEach(function (hijo) {
+          hijos.appendChild(crearNodo(hijo));
+        });
+        envoltorio.appendChild(hijos);
+      }
+      return envoltorio;
+    }
+
+    function renderArbol() {
+      const arbol = document.getElementById("arbol");
+      arbol.replaceChildren(crearNodo(raiz));
+    }
+
+    function renderCliente() {
+      const respuesta = consultar(seleccionado);
+      const firma = document.getElementById("firma");
+      firma.innerHTML = "const elemento: <em>ElementoPresupuestario</em> = " + escapar(respuesta.codigo) + ";\n" +
+        "elemento.obtenerCodigo();\n" +
+        "elemento.obtenerDescripcion();\n" +
+        "elemento.calcularValorTotal();\n" +
+        "elemento.mostrarEstructura();";
+
+      const resultado = document.getElementById("resultado");
+      resultado.replaceChildren();
+      [
+        ["Código", respuesta.codigo],
+        ["Descripción", respuesta.descripcion],
+        ["Valor total", dinero(respuesta.total)]
+      ].forEach(function (par) {
+        const dato = document.createElement("div");
+        dato.className = "dato";
+        const etiqueta = document.createElement("span");
+        etiqueta.textContent = par[0];
+        const valor = document.createElement("strong");
+        valor.textContent = par[1];
+        dato.append(etiqueta, valor);
+        resultado.appendChild(dato);
+      });
+
+      const estructura = document.createElement("div");
+      estructura.className = "dato ancho";
+      const etiquetaEstructura = document.createElement("span");
+      etiquetaEstructura.textContent = "Estructura";
+      const pre = document.createElement("pre");
+      pre.className = "estructura";
+      pre.textContent = respuesta.estructura;
+      estructura.append(etiquetaEstructura, pre);
+      resultado.appendChild(estructura);
+
+      const lista = document.getElementById("recorrido");
+      lista.replaceChildren();
+      pasos.forEach(function (paso, indice) {
+        const item = document.createElement("li");
+        item.className = "paso";
+        item.dataset.indice = String(indice);
+        item.style.marginLeft = (paso.profundidad * 14) + "px";
+        item.textContent = paso.texto;
+        lista.appendChild(item);
+      });
+
+      const esGrupo = seleccionado instanceof GrupoPresupuestario;
+      document.getElementById("agregar").disabled = !esGrupo;
+      document.getElementById("quitar").disabled = seleccionado === raiz;
+      document.getElementById("aviso").textContent = esGrupo
+        ? "El nuevo hijo entra al grupo " + seleccionado.obtenerCodigo() + ". El cliente no se modifica."
+        : "Una partida no tiene hijos. Elija un grupo para agregar.";
+    }
+
+    function marcarPaso(indice) {
+      const paso = pasos[indice];
+      if (!paso) return;
+      document.querySelectorAll(".nodo").forEach(function (nodo) {
+        nodo.classList.toggle("visita", nodo.dataset.id === idDe(paso.nodo));
+      });
+      document.querySelectorAll(".paso").forEach(function (item) {
+        item.classList.toggle("actual", Number(item.dataset.indice) === indice);
+      });
+      const actual = document.querySelector(".paso.actual");
+      if (actual) actual.scrollIntoView({ block: "nearest" });
+      renderCodigo(paso.clase, paso.metodo);
+    }
+
+    function seleccionar(elemento) {
+      detenerRecorrido();
+      seleccionado = elemento;
+      pasos = [];
+      const explicado = explicarValor(elemento, 0, pasos);
+      const real = consultar(elemento).total;
+      if (Math.abs(explicado - real) > 0.001) {
+        pasos.push({
+          profundidad: 0,
+          nodo: elemento,
+          clase: "consultar",
+          metodo: "consultar",
+          texto: "La explicación no coincide con consultar()."
+        });
+      }
+      renderArbol();
+      renderCliente();
+      renderCodigo("", "");
+    }
+
+    function recorrer() {
+      detenerRecorrido();
+      if (!pasos.length) return;
+      let indice = 0;
+      marcarPaso(0);
+      timer = setInterval(function () {
+        indice += 1;
+        if (indice >= pasos.length) {
+          detenerRecorrido();
+          return;
+        }
+        marcarPaso(indice);
+      }, 850);
+    }
+
+    document.querySelectorAll(".pestana").forEach(function (boton) {
+      boton.addEventListener("click", function () {
+        document.querySelectorAll(".pestana").forEach(function (pestana) {
+          const activa = pestana === boton;
+          pestana.classList.toggle("activa", activa);
+          pestana.setAttribute("aria-selected", activa ? "true" : "false");
+        });
+        document.querySelectorAll(".panel-tab").forEach(function (panel) {
+          panel.classList.toggle("activa", panel.id === boton.dataset.panel);
+        });
+      });
+    });
+
+    document.getElementById("recorrer").addEventListener("click", recorrer);
+    document.getElementById("restaurar").addEventListener("click", function () {
+      detenerRecorrido();
+      crearEjemplo();
+      seleccionar(raiz);
+    });
+    document.getElementById("quitar").addEventListener("click", function () {
+      const padre = padres.get(seleccionado);
+      if (!padre) return;
+      padre.quitar(seleccionado);
+      padres.delete(seleccionado);
+      seleccionar(padre);
+    });
+    document.getElementById("tipo").addEventListener("change", function () {
+      document.getElementById("etiqueta-valor").hidden = document.getElementById("tipo").value === "grupo";
+    });
+    document.getElementById("alta").addEventListener("submit", function (evento) {
+      evento.preventDefault();
+      if (!(seleccionado instanceof GrupoPresupuestario)) return;
+      const codigo = document.getElementById("codigo").value.trim();
+      const descripcion = document.getElementById("descripcion").value.trim();
+      const aviso = document.getElementById("aviso");
+      if (!codigo || !descripcion) {
+        aviso.textContent = "Escriba código y descripción.";
+        return;
+      }
+      let nuevo;
+      if (document.getElementById("tipo").value === "grupo") {
+        nuevo = new GrupoPresupuestario(codigo, descripcion);
+      } else {
+        const valor = Number(document.getElementById("valor").value);
+        if (!Number.isFinite(valor) || valor < 0) {
+          aviso.textContent = "El valor asignado debe ser un número mayor o igual que cero.";
+          return;
+        }
+        nuevo = new Partida(codigo, descripcion, valor);
+      }
+      vincular(seleccionado, nuevo);
+      document.getElementById("codigo").value = "";
+      document.getElementById("descripcion").value = "";
+      document.getElementById("valor").value = "";
+      seleccionar(nuevo);
+    });
+
+    crearEjemplo();
+    seleccionar(raiz);
+  </script>
+</body>
+</html>

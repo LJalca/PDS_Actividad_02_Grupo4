@@ -1,0 +1,69 @@
+﻿@startuml diagrama-composite
+!pragma layout smetana
+title Escenario 01 - Presupuesto institucional\nPatrón Composite
+
+skinparam backgroundColor #FFFEFB
+skinparam shadowing false
+skinparam roundcorner 0
+skinparam classAttributeIconSize 0
+skinparam classFontName Arial
+skinparam classFontSize 13
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam ArrowColor #1A1A1A
+skinparam ClassBorderColor #1A1A1A
+skinparam ClassBackgroundColor #FFFFFF
+skinparam ClassHeaderBackgroundColor #F4F0E6
+skinparam StereotypeFontSize 11
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 50
+
+interface ElementoPresupuestario <<Component>> {
+  + obtenerCodigo(): String
+  + obtenerDescripcion(): String
+  + calcularValorTotal(): double
+  + mostrarEstructura(): String
+}
+
+class Partida <<Leaf>> {
+  - codigo: String
+  - descripcion: String
+  - valorAsignado: double
+  --
+  + obtenerCodigo(): String
+  + obtenerDescripcion(): String
+  + calcularValorTotal(): double
+  + mostrarEstructura(): String
+}
+
+class GrupoPresupuestario <<Composite>> {
+  - codigo: String
+  - descripcion: String
+  - elementos: List<ElementoPresupuestario>
+  --
+  + agregar(elemento: ElementoPresupuestario): void
+  + quitar(elemento: ElementoPresupuestario): void
+  + obtenerCodigo(): String
+  + obtenerDescripcion(): String
+  + calcularValorTotal(): double
+  + mostrarEstructura(): String
+}
+
+class Cliente {
+  + consultar(elemento: ElementoPresupuestario): void
+}
+
+Cliente -down-> ElementoPresupuestario : utiliza
+Partida .up.|> ElementoPresupuestario
+GrupoPresupuestario .up.|> ElementoPresupuestario
+GrupoPresupuestario "1" *-up- "0..*" ElementoPresupuestario : elementos
+Partida -[hidden]right- GrupoPresupuestario
+
+legend bottom
+El cliente llama calcularValorTotal() y mostrarEstructura() sobre ElementoPresupuestario.
+Una partida y un grupo se usan igual. El grupo recorre sus hijos.
+Un hijo puede ser otro grupo.
+endlegend
+
+@enduml
